@@ -15,6 +15,7 @@ clc; clear;
 inputBrain = 'LiverInput/13.000000-t1vibeqfstrap2bhFIL-72776';
 output_loc = 'LiverOutput/';
 dicomlist = dir(fullfile(inputBrain,'*.dcm'));
+
 total_Im = numel(dicomlist);
 disp(total_Im); 
 for cnt = 20 : total_Im - 50
@@ -22,15 +23,10 @@ for cnt = 20 : total_Im - 50
     disp(cnt);
     filename = fullfile(inputBrain,dicomlist(cnt).name);
     img = dicomread(filename); 
-    sz = size(img);
-    xg = 1:sz(1);
-    yg = 1:sz(2);
-    F = griddedInterpolant({xg,yg},double(img));
-    xq = (0:3/6:sz(1))';
-    yq = (0:3/6:sz(2))';
-    img = uint8(F({xq, yq}));
+    img = resizeImage(img, 5/6);
+    img = adjustIm(img);
     % disp(size(img));
-    segimg = fuzzyimage(img ,cnt, output_loc);
+    % segimg = fuzzyimage(img ,cnt, output_loc);
     % subplot(1,2,1);
     % imshow(img, []);
     % subplot(1,2,2);
@@ -41,7 +37,29 @@ for cnt = 20 : total_Im - 50
 % ivals = 50:10:192;
 
 end
+function biggerIm = resizeImage(img, scaleFactor)
+    sz = size(img);
+    xg = 1:sz(1);
+    yg = 1:sz(2);
+    F = griddedInterpolant({xg,yg},double(img));
+    xq = (0:scaleFactor:sz(1))';
+    yq = (0:scaleFactor:sz(2))';
+    biggerIm = uint8(F({xq, yq}));
+   
+end
 
+function adjIm = adjustIm(img)
+    adjIm = imadjust(img, [0.3, 1.0], [0.3, 1.0]);
+
+    imshow(adjIm,[]);
+    imcontrast
+    hold;
+
+end
+
+
+%im=imread ('/home/Debanjan_cse/MUSIG Function Modified/SkullStripped/72.png');
+%im=rgb2gray(im);
 % %image(inputImages[:, :, 1], C);
 % output_loc='LiverOutput/';
 % ivals = 50:10:192;
