@@ -6,7 +6,7 @@ for p=1:ht
  	    %if(x ~= 0.1)   % changes made
         if(x < 0.1)   % changes made
            a=1;
-           fprintf('changed the points: %f %f', p, q);
+           %printf('changed the points: %f %f', p, q);
         else
            a=0;
            break;

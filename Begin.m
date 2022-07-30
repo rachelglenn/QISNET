@@ -11,32 +11,80 @@
 % end
 clc; clear;
 
-
-inputBrain = 'LiverInput/13.000000-t1vibeqfstrap2bhFIL-72776';
-output_loc = 'LiverOutput/';
-dicomlist = dir(fullfile(inputBrain,'*.dcm'));
-
-total_Im = numel(dicomlist);
-disp(total_Im); 
-for cnt = 20 : total_Im - 50
-    disp('cnt');
-    disp(cnt);
-    filename = fullfile(inputBrain,dicomlist(cnt).name);
-    img = dicomread(filename); 
-    img = resizeImage(img, 5/6);
-    img = adjustIm(img);
-    % disp(size(img));
-    % segimg = fuzzyimage(img ,cnt, output_loc);
-    % subplot(1,2,1);
-    % imshow(img, []);
-    % subplot(1,2,2);
-    % imshow(segimg, []);
-    % before_after_img = imtile({img,segimg});
-    % imshow(before_after_img, []);
+topLevelFolder = '/rsrch1/ip/rglenn1/data/Processed';
+files = dir(topLevelFolder);
+% Get a logical vector that tells which is a directory.
+dirFlags = [files.isdir];
+% Extract only those that are directories.
+subFolders = files(dirFlags); % A structure with extra info.
+% Get only the folder names into a cell array.
+subFolderNames = {subFolders(3:end).name}; % Start at 3 to skip . and ..
+% Optional fun : Print folder names to command window.
+patientDice = zeros(size(length(subFolderNames)));
+for k = 1 : length(subFolderNames)
+    patient = topLevelFolder+ "/"+subFolderNames{k};
+	fprintf('Sub folder #%d = %s\n', k, patient);
+    art = niftiread(patient + '/Pre.raw.nii.gz');
+    truth = niftiread(patient + '/Truth.raw.nii.gz');
+    diceList = zeros(size(length(art(1,1,:))));
+    outdir = append('results/', subFolderNames{k});
+    mkdir(outdir)
+    for n = 1 : length(art(1,1,:))
+        img = art(:,:,n);
+        imgtruth = truth(:,:,n);
+        % img = resizeImage(img, 5/6);
+        % img = adjustIm(img);
+        %imgtruth = resizeImage(imgtruth, 5/6);
+        % imgtruth = adjustIm(imgtruth);
+        % disp(size(img));
+        segimg = fuzzyimage(img, imgtruth, n, outdir, subFolderNames{k} );
+        % subplot(1,2,1);
+        % imshow(img, []);
+        % subplot(1,2,2);
+        % imshow(segimg, []);
+        % filename = sprintf('LiverOutput/Truth_%d.png',n );
+        %imwrite(uint8(imgtruth),filename);
+        % before_after_img = imtile({img,segimg});
+        %disp("Size");
+        %disp(ndims(segimg));
+        %imshow(imgtruth, []);
+        imga = double(segimg);
+        imgb = double(imgtruth);
+        filename = sprintf('%s/Truth_%d_%s.png',outdir, n, subFolderNames{k});
+        imwrite(double(imgtruth),filename);
+        diceList(n) = generalizedDice(imga,imgb);
+        %hold;
+    end
+    patientDice(k) = mean(diceList);
+end
+fid = fopen('results/LiverDice.txt','w');
+fprintf(fid,'%f\t%f\n',subFolderNames{:},patientDice{:});
+fclose(fid);
+% output_loc = 'LiverOutput/';
+% dicomlist = dir(fullfile(inputBrain,'*.dcm'));
+% exit
+% total_Im = numel(dicomlist);
+% disp(total_Im); 
+% for cnt = 20 : total_Im - 50
+%     disp('cnt');
+%     disp(cnt);
+%     filename = fullfile(inputBrain,dicomlist(cnt).name);
+%     img = dicomread(filename); 
+%     img = resizeImage(img, 5/6);
+%     img = adjustIm(img);
+%     % disp(size(img));
+%     segimg = fuzzyimage(img ,cnt, output_loc);
+%     subplot(1,2,1);
+%     imshow(img, []);
+%     subplot(1,2,2);
+%     imshow(segimg, []);
+%     before_after_img = imtile({img,segimg});
+%     imshow(before_after_img, []);
+%     hold;
 
 % ivals = 50:10:192;
 
-end
+
 function biggerIm = resizeImage(img, scaleFactor)
     sz = size(img);
     xg = 1:sz(1);
@@ -51,9 +99,9 @@ end
 function adjIm = adjustIm(img)
     adjIm = imadjust(img, [0.3, 1.0], [0.3, 1.0]);
 
-    imshow(adjIm,[]);
-    imcontrast
-    hold;
+    % imshow(adjIm,[]);
+    %imcontrast
+    %hold;
 
 end
 

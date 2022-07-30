@@ -1,4 +1,8 @@
 # QIS-Net
+Cloned from Konar QIS-Net.
+Debanjan Konar, Siddhartha Bhattacharyya, Tapan Kr. Gandhi, and Bijaya Ketan Panigrahi, A Quantum-Inspired Self-Supervised Network model for automatic
+segmentation of brain MR images,Applied Soft Computing Journal 93 (2020) 106348.
+
 A Quantum-Inspired Self-Supervised Network model for automatic segmentation of brain MR images
 A fully self-supervised novel quantum-inspired neural network model referred to as Quantum-Inspired Self-Supervised Network (QIS-Net) is proposed and tailored for fully automatic segmentation of brain MR images to obviate the challenges faced by deeply supervised Convolutional Neural Network (CNN) architectures. 
 The proposed QIS-Net architecture is composed of three layers of quantum neuron (input, intermediate and output) expressed as qbits. 
