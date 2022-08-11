@@ -1,4 +1,4 @@
-function [Z, w1]= Transit(I,ht,wt,q0)   % I is a input matrix, Ht is height of a matrix , wt is width of a matrixand q0 is lamda
+function [Z, w1]= Transit(I,ht,wt,q0,cluster)   % I is a input matrix, Ht is height of a matrix , wt is width of a matrixand q0 is lamda
 pi=22./7;
 %lamda=double (1./q0);
 lamda= q0;
@@ -14,11 +14,12 @@ alphas = 0;
 
 %cluster =[0 0.16 0.32 0.48 0.64 0.80 0.96 1]; % Set 1 for cluaster 8
 % Used
-cluster =[0 0.14 0.28 0.42 0.56 0.70 0.90 1]; % Set 2 for cluaster 8
+% cluster =[0 0.14 0.28 0.42 0.56 0.70 0.90 1]; % Set 2 for cluaster 8
 %cluster =[0 0.13 0.26 0.39 0.52 0.75 0.91 1]; % Set 3 for cluaster 8
 %cluster =[0 0.18 0.36 0.54 0.72 0.90 0.97 1]; % Set 4 for cluaster 8
 %cluster =[0 0.17 0.34 0.51 0.68 0.85 0.95 1]; % Set 5 for cluaster 8
-
+%cluster = [0.15, 0.29, 0.43, 0.57, 0.71, 0.85, 1]; %RG from paper
+% cluster = [0.15, 0.30, 0.46, 0.61, 0.76, 0.91, 1];
 %.........Li.................%
 
 % cluster = [0 0.62 0.71 0.80 0.83 0.93 0.98 1]; % Set 1 for cluster 8
