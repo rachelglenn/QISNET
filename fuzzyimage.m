@@ -36,7 +36,8 @@ clusterlist = {[0 0.14 0.28 0.42 0.56 0.70 0.90 1]};
 %  [0 0.63 0.74 0.79 0.82 0.88 0.97 1],...
 % [0 0.70 0.74 0.79 0.82 0.88 0.98 1]};
 
-lamblist = linspace(-0.5,0.5,2); % 0.25:-0.001:0.24
+lamblist = linspace(-0.1,0.5,2); % 0.25:-0.001:0.24
+lamblist = [-0.5];
 numtrys = length(clusterlist)*length(lamblist);
 %lamblist = linspace(-0.1,0.1,10);
 
@@ -81,7 +82,7 @@ for n = 1 : numtrys
 
 
     in_matrix = double (in_matrix)./255; % fuzzy_set
-    %l=in_matrix;
+    l=in_matrix;
     in_matrix = double((pi/2)*in_matrix);
 
     x = zeros (ht,wt);
@@ -111,10 +112,10 @@ for n = 1 : numtrys
         end
     end
 
-    %subplot (1,3,1), imshow(im); title ('Original Image');
-    %subplot (1,3,2), imshow(l); title ('Gray Image');
-    %subplot (1,3,3), imshow(out_matrix); title ('segmented Image')
-    %figure, imshow(out_matrix,[]);
+    subplot (1,3,1), imshow(im); title ('Original Image');
+    subplot (1,3,2), imshow(l); title ('Gray Image');
+    subplot (1,3,3), imshow(out_matrix); title ('segmented Image')
+    figure, imshow(out_matrix,[])
 
     %filename = sprintf('DataBrainOutput/A00028185/%d_C8_S2_%f.png',i, lamb);
     %filename = sprintf('LiverOutput/%d_C8_S2_%f.png',i, lamb);
@@ -147,16 +148,16 @@ for n = 1 : numtrys
 
     %Z =generalizedDice(imga,imgb);
     diceList(n) = dist;
-    disp("DiceList");
-    disp(diceList(n));
+    %disp("DiceList");
+    %disp(diceList(n));
     images(:,:,n) = A;
     lamblistUsed(n) = lamb;
     clusterListUsed(:,n) = cluster;
     %imshow(A, []);
 end
 [value, pos] = max(diceList);
-disp("Max Dice:");
-disp(value);
+%disp("Max Dice:");
+%disp(value);
 
 
 A = images(:,:,pos);
@@ -165,21 +166,21 @@ B = im2bw(double(imgtruth), graythresh(double(imgtruth)));
 %imshow(A, []);
 %A=A-min(A(:)); % shift data such that the smallest element of A is 0
 %A=A/max(A(:)); % normalize the shifted data to 1     
-filename = sprintf('%s/Pred_%d_%s.png',outdir, i,patient);
+filename = sprintf('%s/Pred_%d.png',outdir, i);
 imwrite(double(A),filename);
 
 %rgbImage = cat(3, B, A, A);
 rgbImage = imoverlay(A, B, [1 0 0]);
-filename = sprintf('%s/Comb_%d_%s.png',outdir, i, patient);
+filename = sprintf('%s/Comb_%d.png',outdir, i);
 imwrite(rgbImage,filename);
 
 
-filename = sprintf('%s/liver_dice_%s.txt',outdir, patient);
+filename = sprintf('%s/liver_dice.txt',outdir);
 fid = fopen(filename,'a+');
 fprintf(fid,'%s\t%d\t%f\t%f\t\n',patient, i, lamblistUsed(pos), diceList(pos));
 fclose(fid);
 
-filename = sprintf('%s/liver_cluster_%s.txt',outdir, patient);
+filename = sprintf('%s/liver_cluster.txt',outdir);
 fid = fopen(filename,'a+');
 fprintf(fid,'%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d \n',clusterListUsed(:, pos));
 fclose(fid);
