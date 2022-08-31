@@ -37,8 +37,8 @@ for k = 1 : length(subFolderNames)
 	fprintf('Sub folder #%d = %s\n', k, patient);
     info = niftiinfo(patient + phase');
     art = niftiread(info);
-    disp("PixelDimen");
-    disp(info.PixelDimensions);
+    %disp("PixelDimen");
+    %disp(info.PixelDimensions);
     
     truth = niftiread(patient + '/Truth.raw.nii.gz');
     diceList = zeros(size(length(art(1,1,:))));
@@ -71,7 +71,7 @@ for k = 1 : length(subFolderNames)
             diceList(n) = generalizedDice(imga,imgb);
             
             if info.BitsPerPixel == 16
-                disp(info.BitsPerPixel);
+                %disp(info.BitsPerPixel);
                 segnifit(:,:,n) = int16(segimg);
             else
                 segnifit(:,:,n) = single(segimg);
@@ -96,8 +96,8 @@ for k = 1 : length(subFolderNames)
     
 
 
-    disp(size(segnifit));
-    disp(size(art));
+    %disp(size(segnifit));
+    %disp(size(art));
     filename = sprintf('%s/QIS.nii',outdir);
     disp(filename);
     %niftiwrite(segnifit,filename,info, 'Compressed',true);

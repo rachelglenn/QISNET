@@ -7,6 +7,7 @@ for a=1:ht
     for b=1:wt
         p=-1;
         sum=0.0;
+        %disp("\n\n\n");
         for m=1:3
             c=-1;
             for n=1:3
@@ -14,8 +15,8 @@ for a=1:ht
                     sum=sum+0;
                 else
                     sum=sum+x(a+p,b+c);
-                    fprintf("x(%d,%d)=%f", a+p, b+c, x(a+p, b+c));
-                    fprintf("p=%d c=%d", p, c);
+                    %fprintf("x(%d,%d)=%f\n", a+p, b+c, x(a+p, b+c));
+                    %fprintf("p=%d c=%d\n", p, c);
                 end
                 c=c+1;
             end

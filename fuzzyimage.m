@@ -16,7 +16,7 @@ out_matrix = zeros(ht,wt);    % new matrix intermediate matrix
 %for lamb = 1:10% for lambda = 0.23 to 0.24
 %for lamb = 0.1:0.01:0.2
 pi=22./7;
-% B = im;
+input_image = im;
 
 
 %.............. otsu Method...................%
@@ -48,6 +48,7 @@ k= 1;
 j = 1;
 lamblistUsed = zeros(size(numtrys));
 clusterListUsed = zeros(8, numtrys);
+previous_N = 1000.0;
 for n = 1 : numtrys
    
    
@@ -112,10 +113,10 @@ for n = 1 : numtrys
         end
     end
 
-    subplot (1,3,1), imshow(im); title ('Original Image');
-    subplot (1,3,2), imshow(l); title ('Gray Image');
-    subplot (1,3,3), imshow(out_matrix); title ('segmented Image')
-    figure, imshow(out_matrix,[])
+    %subplot (1,3,1), imshow(im); title ('Original Image');
+    %subplot (1,3,2), imshow(l); title ('Gray Image');
+    %subplot (1,3,3), imshow(out_matrix); title ('segmented Image')
+    %figure, imshow(out_matrix,[])
 
     %filename = sprintf('DataBrainOutput/A00028185/%d_C8_S2_%f.png',i, lamb);
     %filename = sprintf('LiverOutput/%d_C8_S2_%f.png',i, lamb);
@@ -138,19 +139,48 @@ for n = 1 : numtrys
 
     ka = [lamb  r ];
 
-    fprintf(fileID,'%6.8f   %12.8f\n',ka);    
-    A = im2bw(double(out_matrix), graythresh(out_matrix));
+    %fprintf(fileID,'%6.8f   %12.8f\n',ka);    
+    %A = im2bw(double(out_matrix), graythresh(out_matrix));
+    thresh = multithresh(out_matrix, 3);
+    %disp("thresh");
+    %disp(thresh);
+    %disp(isnan( A ));
+    out_matrix(isnan(out_matrix))=0;
+    %seg_I = imquantize(A, thresh);
+    %RGB = label2rgb(seg_I); 	 
+    %figure;
+    seg_I = (out_matrix >=thresh(3));
+    N = double(nnz( seg_I ));
+    %fprintf("on image %f and nonzero pixels %f(i) %f \n", i, N,previous_N);
+    if N < 1000.0
+        %fprintf("on image %f and nonzero pixels(2) %f \n", i, N);
+        seg_I = (out_matrix >=thresh(2));
+        N = double(nnz( seg_I));
+        if N < 1000.0
+            %fprintf("on image %f and nonzero pixels(1) %f \n", i, N);
+            seg_I = (out_matrix >=thresh(1));
+            N = double(nnz( seg_I));  
+        end
+    end
+    %fprintf("on image %f and nonzero pixels %f(f) \n", i, N)
+%     previous_N = N;
+%     if previous_N < 1000.0
+%         fprintf("on image %d and nonzero pixels %d(0) \n", i, N);
+%         previous_N = 1000.0;
+%     end
+    seg_I = uint16(seg_I);
+
     B = im2bw(double(imgtruth), graythresh(double(imgtruth)));
     idx_img = find(B);
-    idx_ref = find(A);
-    idx_inter = find(A&B);
+    idx_ref = find(seg_I);
+    idx_inter = find(seg_I&B);
     dist = 2*length(idx_inter)/(length(idx_ref)+length(idx_img));
 
     %Z =generalizedDice(imga,imgb);
     diceList(n) = dist;
     %disp("DiceList");
     %disp(diceList(n));
-    images(:,:,n) = A;
+    images(:,:,n) = seg_I;
     lamblistUsed(n) = lamb;
     clusterListUsed(:,n) = cluster;
     %imshow(A, []);
@@ -161,18 +191,30 @@ end
 
 
 A = images(:,:,pos);
-out_matrix = A;
-B = im2bw(double(imgtruth), graythresh(double(imgtruth)));
+
+
+
+
+imshow(A)
+axis off
+title('RGB Segmented Image')
+B = im2bw(double(A), graythresh(double(A)));
 %imshow(A, []);
 %A=A-min(A(:)); % shift data such that the smallest element of A is 0
 %A=A/max(A(:)); % normalize the shifted data to 1     
 filename = sprintf('%s/Pred_%d.png',outdir, i);
-imwrite(double(A),filename);
-
+imwrite(A,filename);
+R   = 1;  % Value in range [0, 1]
+G   = 0;
+B1   = 0;
+input_image = mat2gray(input_image);
+RGB = cat(3, B * R, B * G, B * B1);
+out = imfuse(RGB,input_image,'blend','Scaling','joint');
 %rgbImage = cat(3, B, A, A);
-rgbImage = imoverlay(A, B, [1 0 0]);
+input_image = imadjust(mat2gray(input_image));
+rgbImage = imoverlay(input_image,mat2gray(A), 'red');
 filename = sprintf('%s/Comb_%d.png',outdir, i);
-imwrite(rgbImage,filename);
+imwrite( rgbImage,filename);
 
 
 filename = sprintf('%s/liver_dice.txt',outdir);
