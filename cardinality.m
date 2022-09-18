@@ -10,13 +10,14 @@ for a=1:ht
         %disp("\n\n\n");
         for m=1:3
             c=-1;
-            for n=1:3
-                if(a+p<=0)||(a+p>=ht+1)||(b+c<=0)||(b+c>=wt+1)
+            for n=1:3 %RG added |(p==c==0)
+                if(a+p<=0)||(a+p>=ht+1)||(b+c<=0)||(b+c>=wt+1) ||(p==0 && c==0)
                     sum=sum+0;
                 else
                     sum=sum+x(a+p,b+c);
                     %fprintf("x(%d,%d)=%f\n", a+p, b+c, x(a+p, b+c));
                     %fprintf("p=%d c=%d\n", p, c);
+
                 end
                 c=c+1;
             end

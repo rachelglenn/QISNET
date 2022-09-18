@@ -56,10 +56,11 @@ for a=1:ht
                     sum=sum+0.00;
                 else
                     w =(pi*2)*(pi/2 - (I(a+p,b+c) - I(a,b)));
+                    %w =(A(a,b)- (I(a+p,b+c) + I(a,b)));
                     z=(I(a+p,b+c))*cos(w-A(a,b));
 
-                    y= 1/(alphas + exp(-(lamda)*(double(z)-B(a,b))));    % this a
-
+                    %y= 1/(alphas + exp(-(lamda)*(double(z)-B(a,b))));    % this a
+                    y= 1/(alphas + exp(-(lamda)*(double(z)-B(a,b))));
                     sum=sum+y;
                 end
                 c=c+1;

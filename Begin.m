@@ -1,14 +1,4 @@
-% input_loc = 'Data_SkullStripped/SkullStripped/';
-% output_loc='Output_SkullStripped/';
-% for i=1:80
-%     path = strcat(input_loc, strcat( int2str(i),'.png'));
-%     respath = strcat(input_loc, strcat( int2str(i),'.png'));
-%     
-%     sprintf( path);
-%     im=imread (path);
-%     %imshow(im);
-%     fuzzyimage(im,i, output_loc);
-% end
+
 clc; clear;
 
 fid = fopen('results/LiverDice_lambda.txt','w');
@@ -27,133 +17,115 @@ subFolderNames = {subFolders(3:end).name}; % Start at 3 to skip . and ..
 patientDice = zeros(size(length(subFolderNames)));
 disp(subFolderNames);
 
-phase = "/Art.raw.nii.gz";
 filename = sprintf('results/liver_dices.txt');
 fid = fopen(filename,'w'); 
 fprintf(fid,'paitentID\tDice\t\n');
 fclose(fid);
+
 for k = 1 : length(subFolderNames)
     patient = topLevelFolder+ "/"+subFolderNames{k};
 	fprintf('Sub folder #%d = %s\n', k, patient);
-    info = niftiinfo(patient + phase');
+    info = niftiinfo(patient + "/Art.bc.nii.gz");
+    fprintf('BitsPerPixel %d', info.BitsPerPixel);
     art = niftiread(info);
-    %disp("PixelDimen");
-    %disp(info.PixelDimensions);
+
     
     truth = niftiread(patient + '/Truth.raw.nii.gz');
-    diceList = zeros(size(length(art(1,1,:))));
-    if info.BitsPerPixel == 16
-        segnifit = zeros(size(art),'int16');
-        truth = int16(truth);
-    else
-        segnifit = zeros(size(art),'single');
-        truth = single(truth);
-    end    
-    info = niftiinfo(patient + phase');
-    art = niftiread(info);
+    if (size(art,1) ~= size(truth,1)) || (size(art, 2) ~= size(truth, 2))
+        disp("sizes are different");
+        truth = imresize3(truth, size(art));
+    end
+
+
+    quantList = zeros(size(length(art(1,1,:))));
+    segnifit = zeros(size(art),'single');
+    truth = single(truth);
+%     if info.BitsPerPixel == 16
+%         segnifit = zeros(size(art),'int16');
+%         truth = int16(truth);
+%     elseif info.BitsPerPixel == 32
+%         segnifit = zeros(size(art),'single');
+%         truth = single(truth);
+%     else
+%         segnifit = zeros(size(art),'int64');
+%         truth = double(truth);   
+%     end    
+
     outdir = append('results/', subFolderNames{k});
     mkdir(outdir);
-    filename = sprintf('%s/test.nii',outdir);
-    niftiwrite(art,filename, info, 'Version', 'NIfTI1',  'Compressed',true);
-    for n = 1 : length(art(1,1,:))
-        img = art(:,:,n);
-        imgtruth = truth(:,:,n);
-        filename = sprintf('%s/Before_%d.png',outdir, n );
-        imwrite(uint8(img),filename); 
-        if sum(imgtruth,'all') ~= 0
-            segimg = fuzzyimage(img, imgtruth, n, outdir, subFolderNames{k} );
-            %segimg = img;
     
-            imga = double(segimg);
-            imgb = double(imgtruth);
-            filename = sprintf('%s/Truth_%d.png',outdir, n);
-            imwrite(double(imgtruth),filename);
-            diceList(n) = generalizedDice(imga,imgb);
-            
-            if info.BitsPerPixel == 16
-                %disp(info.BitsPerPixel);
-                segnifit(:,:,n) = int16(segimg);
-            else
-                segnifit(:,:,n) = single(segimg);
-            end   
-        else
-            segimg = fuzzyimage(img, imgtruth, n, outdir, subFolderNames{k} );
-            if info.BitsPerPixel == 16
-                %segnifit(:,:,n) = int16(segimg);
-                segnifit(:,:,n) =  zeros(size(art(:,:,1)),'int16');
-            else
-                %segnifit(:,:,n) = single(segimg);
-                segnifit(:,:,n) =  zeros(size(art(:,:,1)),'single');
-            end   
-        end
+    filename = append(outdir,'/anay.txt');
+
+    fid = fopen(filename,'w');
+    fprintf(fid,'%s\t%s\t%s\t%s\n','n', 'quant', 'threshold', 'dice');
+    fclose(fid);
+
+
+    for n = 1 : length(art(1,1,:))
+        fprintf("scan num:%d\n",n);
+        img = art(:,:,n);
+ 
+       %% 
+       imgtruth = truth(:,:,n);
+        %Perform Algorithm
+        img = sgolayfilt(img, 2, 9, [], 1);
+        segimg = fuzzyimage(img, single(imgtruth), n, outdir, subFolderNames{k} );
+        %segimg = img;
+        segnifit(:,:,n) = single(segimg);
+%        if info.BitsPerPixel == 16
+%             segnifit(:,:,n) = int16(segimg);
+%        elseif info.BitsPerPixel == 32
+%             segnifit(:,:,n) = single(segimg);
+%        else   
+%             segnifit(:,:,n) = double(segimg);
+%        end
     end
-    dice = generalizedDice(truth,segnifit);
-    %filename = sprintf('%s/liver_dice.txt',outdir);
+    % Calculate Dice
+    dice = calculateDice(double(segnifit),double(truth));
+   
     filename = sprintf('results/liver_dices.txt');
     fid = fopen(filename,'a+'); 
     fprintf(fid,'%s\t%f\t\n', subFolderNames{k}, dice);
     fclose(fid);
-    
+    info = niftiinfo(patient + "/Art.bc.nii.gz");
+    if info.BitsPerPixel == 16
+        filename = sprintf('%s/QIS.nii',outdir);
+        disp(filename);
+        info.BitsPerPixel = 16;
+     
+        niftiwrite(int16(segnifit),filename, info, 'Version', 'NIfTI1',  'Compressed',true);
 
+    elseif info.BitsPerPixel == 32
+        filename = sprintf('%s/QIS.nii',outdir);
+        disp(filename);
+        info.BitsPerPixel = 32;
 
-    %disp(size(segnifit));
-    %disp(size(art));
-    filename = sprintf('%s/QIS.nii',outdir);
-    disp(filename);
-    %niftiwrite(segnifit,filename,info, 'Compressed',true);
-    %info = niftiinfo(patient + '/Pre.raw.nii.gz');
-    %[a, b, c ] =size(segnifit);
-    %infoinfo.Filesize = (a*b*c)*31;
+        niftiwrite(single(segnifit),filename, info, 'Version', 'NIfTI1',  'Compressed',true);
+    else
+        filename = sprintf('%s/QIS.nii',outdir);
+        disp(filename);
+        info.BitsPerPixel = 64;
+      
+        niftiwrite(double(segnifit),filename, info, 'Version', 'NIfTI1',  'Compressed',true);
 
-%     if info.BitsPerPixel == 16
-%         segnifit = zeros(size(art),'int16');
-%     else
-%         segnifit = zeros(size(art),'single');
-%     end 
-    info = niftiinfo(patient + phase);
-    niftiwrite(segnifit,filename, info, 'Version', 'NIfTI1',  'Compressed',true);
-    patientDice(k) = mean(diceList);
+     end
 end
-
-
 
 function biggerIm = resizeImage(img, scaleFactor)
-    sz = size(img);
-    xg = 1:sz(1);
-    yg = 1:sz(2);
-    F = griddedInterpolant({xg,yg},double(img));
-    xq = (0:scaleFactor:sz(1))';
-    yq = (0:scaleFactor:sz(2))';
-    biggerIm = uint8(F({xq, yq}));
-   
-end
+     
+    biggerIm = zeros(size(img));   
+    for i = 1 : length(img(1,1,:))
+        n = 1;  
+        I =(mat2gray(img(:,:,i)));
+        %Idouble = im2double(I); 
+        %avg = mean2(Idouble);
+        %sigma = std2(Idouble);
+        img_c = imadjust(I,[],[],0.95);
+        %img_c = imadjust(I,[avg-n*sigma avg+n*sigma],[]);
+        %img_c = int16(img(:,:,n));
 
-function adjIm = adjustIm(img)
-    n = 2;  
-    Idouble = im2double(img); 
-    avg = mean2(Idouble);
-    sigma = std2(Idouble);
-    %adjIm = imadjust(img);
-    %adjIm = imadjust(img,[avg-n*sigma avg+n*sigma],[]);
-    %adjIm = histeq(adjIm);
-    % imshow(adjIm,[]);
-    %imcontrast
-    %hold;
-
+        biggerIm(:,:,n) = img_c; 
+    end
 end
 
 
-%im=imread ('/home/Debanjan_cse/MUSIG Function Modified/SkullStripped/72.png');
-%im=rgb2gray(im);
-% %image(inputImages[:, :, 1], C);
-% output_loc='LiverOutput/';
-% ivals = 50:10:192;
-% ni = length(ivals);
-% for K = 1 : ni
-%     i = ivals(K);
-%     im = V(:,:,i); %n is the slice number that you want to visualize.
-%     %imshow(im,[])
-%     
-%     %imshow(im);
-%     
-% end
