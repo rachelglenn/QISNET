@@ -22,7 +22,7 @@ fid = fopen(filename,'w');
 fprintf(fid,'paitentID\tDice\t\n');
 fclose(fid);
 
-for k = 1 : length(subFolderNames)
+for k = 1 :length(subFolderNames)
     patient = topLevelFolder+ "/"+subFolderNames{k};
 	fprintf('Sub folder #%d = %s\n', k, patient);
     info = niftiinfo(patient + "/Art.bc.nii.gz");
@@ -40,16 +40,7 @@ for k = 1 : length(subFolderNames)
     quantList = zeros(size(length(art(1,1,:))));
     segnifit = zeros(size(art),'single');
     truth = single(truth);
-%     if info.BitsPerPixel == 16
-%         segnifit = zeros(size(art),'int16');
-%         truth = int16(truth);
-%     elseif info.BitsPerPixel == 32
-%         segnifit = zeros(size(art),'single');
-%         truth = single(truth);
-%     else
-%         segnifit = zeros(size(art),'int64');
-%         truth = double(truth);   
-%     end    
+
 
     outdir = append('results/', subFolderNames{k});
     mkdir(outdir);
@@ -60,18 +51,61 @@ for k = 1 : length(subFolderNames)
     fprintf(fid,'%s\t%s\t%s\t%s\n','n', 'quant', 'threshold', 'dice');
     fclose(fid);
 
+    filename = sprintf('%s/liver_dice.txt',outdir);
+    fid = fopen(filename,'w');
+    fprintf(fid,'%s\t%s\t%s\t%s\t\n','patient', 'i', 'lamba', 'dice');
+    fclose(fid);
 
-    for n = 1 : length(art(1,1,:))
+     
+    
+    for n = 60 : 60%length(art(1,1,:))
         fprintf("scan num:%d\n",n);
+        if n > length(art(1,1,:))
+            n = 40;
+        end
+
         img = art(:,:,n);
- 
-       %% 
-       imgtruth = truth(:,:,n);
+        imgtruth = truth(:,:,n);
+        test = imbinarize(imgtruth);
+        fprintf("check sum: %f\n", sum(test(:)));
+        if (sum(test(:)) < 100) 
+            fprintf("Sum less than 10 need new test image %f\n",sum(test(:)) );
+            fprintf("changing value n %f\n", n);
+            n = 83;
+            if n > length(art(1,1,:))
+                fprintf("changing value n %f\n", n);
+                n = 30;
+            end
+            img = art(:,:,n);
+            imgtruth = truth(:,:,n);
+            test = imbinarize(imgtruth);  
+        end
+        if (sum(test(:)) < 10) 
+            fprintf("Sum less than 10 need new test image %f\n",sum(test(:)) );
+       
+            
+            fprintf("changing value n %f\n", n);
+            n = 50;
+            img = art(:,:,n);
+            imgtruth = truth(:,:,n);
+
+        end
+        fprintf("check value n %f\n", n);
         %Perform Algorithm
-        img = sgolayfilt(img, 2, 9, [], 1);
-        segimg = fuzzyimage(img, single(imgtruth), n, outdir, subFolderNames{k} );
+
+        
+        %img = TransformImage2(img, 10, 50);
+        img = sgolayfilt(double(img), 3, 7, [], 2);
+        %img = imcontrast(single(img));
+        %imshow(img, []);
+        lamblist = [-1.0, -0.4, -0.2, 0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 0.9, ...
+            1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0,...
+            4.25, 4.5, 4.75, 5.0];
+        [segimg, lambBest, bestDice] = fuzzyimage((img), (imgtruth), n, outdir, subFolderNames{k}, lamblist );
         %segimg = img;
+       
         segnifit(:,:,n) = single(segimg);
+        %imshow(imgtruth, []);
 %        if info.BitsPerPixel == 16
 %             segnifit(:,:,n) = int16(segimg);
 %        elseif info.BitsPerPixel == 32
@@ -81,12 +115,13 @@ for k = 1 : length(subFolderNames)
 %        end
     end
     % Calculate Dice
-    dice = calculateDice(double(segnifit),double(truth));
+    dice = calculateDice((segnifit),(truth));
    
     filename = sprintf('results/liver_dices.txt');
     fid = fopen(filename,'a+'); 
-    fprintf(fid,'%s\t%f\t\n', subFolderNames{k}, dice);
+    fprintf(fid,'%s \t %f \t %f \n', subFolderNames{k}, bestDice, lambBest);
     fclose(fid);
+
     info = niftiinfo(patient + "/Art.bc.nii.gz");
     if info.BitsPerPixel == 16
         filename = sprintf('%s/QIS.nii',outdir);

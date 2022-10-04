@@ -8,6 +8,8 @@ A=(pi*2)*B;
 %I = ones(ht,wt);
 %A=(1.76*pi)*I;
 alphas = 0;
+% RG changed alphas
+%alphas = 2;
 
 
 %.............. otsu Method...................%
@@ -60,13 +62,42 @@ for a=1:ht
                     z=(I(a+p,b+c))*cos(w-A(a,b));
 
                     %y= 1/(alphas + exp(-(lamda)*(double(z)-B(a,b))));    % this a
-                    y= 1/(alphas + exp(-(lamda)*(double(z)-B(a,b))));
+                    %y= 1/(alphas + exp(-(lamda)*(double(z)-B(a,b))));
+                    %fprintf("check %f\t %f \t %f\n", y,alphas, exp(-(lamda)*(double(z)-B(a,b))));
+                    %sum=sum+y;
+                    tmp = exp(-(lamda)*(double(z)-B(a,b)));
+                    y= 1/(alphas + tmp);
+                    %fprintf("check %f\t %f \t %f\n", y,alphas, exp(-(lamda)*(double(z)-B(a,b))));
+                    
+                    %check_range = -1/tmp * log(alphas-1);
+                    
+                    %if check_range >1.0
+                        %Transit(I,ht,wt,q0 -0.5,cluster);
+                        %if alphas ==1
+                        %    alphas = 0;
+                        %end
+
+                        %fprintf("check_range %f \t %f \t %f \n", check_range, alphas, lamda);
+                        %lamda = lamda + 0.5;
+                        %tmp = exp(-(lamda)*(double(z)-B(a,b)));
+                        %y= 1/(alphas + tmp);
+                        %fprintf("check %f\t %f \t %f\n", y,alphas, exp(-(lamda)*(double(z)-B(a,b))));
+                        
+                        %check_range = -1/tmp * log(alphas-1);
+                    %end
                     sum=sum+y;
                 end
                 c=c+1;
             end
             p=p+1;
         end
+        if sum > 1.0e5
+            %fprintf("Sum is large %f\n", sum);
+            %sum = 100000.0;
+            %Transit(I,ht,wt,q0 -0.5,cluster);
+        end
+     
+
         Z(a,b)=sum;
         w1(a,b)=w;
     end
