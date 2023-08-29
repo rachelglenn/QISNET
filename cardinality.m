@@ -15,8 +15,10 @@ for a=1:ht
                     sum=sum+0;
                 else
                     sum=sum+x(a+p,b+c);
+                    %%if sum > 1000000.00
                     %fprintf("x(%d,%d)=%f\n", a+p, b+c, x(a+p, b+c));
                     %fprintf("p=%d c=%d\n", p, c);
+                    %end
 
                 end
                 c=c+1;

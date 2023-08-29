@@ -1,10 +1,18 @@
 function [Z, w1]= Transit(I,ht,wt,q0,cluster)   % I is a input matrix, Ht is height of a matrix , wt is width of a matrixand q0 is lamda
 pi=22./7;
+pi = 3.14;
 %lamda=double (1./q0);
 lamda= q0;
 B=cardinality(I,ht,wt);
+manualScale = @(I) 3.14* (I-min(I(:)))/(max(I(:))-min(I(:)));
+I = manualScale(I);
+B = manualScale(B);
+%figure(3);
+ %imshow(mat2gray( double(B) , [min(double(B(:))) max(double(B(:)))] ));
+
+
 %A = ones(ht,wt);
-A=(pi*2)*B;
+A=B;
 %I = ones(ht,wt);
 %A=(1.76*pi)*I;
 alphas = 0;
@@ -30,7 +38,7 @@ alphas = 0;
 %cluster = [0 0.63 0.74 0.79 0.82 0.88 0.97 1]; % Set 4 for cluster 8
 %cluster = [0 0.70 0.74 0.79 0.82 0.88 0.98 1]; % Set 5 for cluster 8
 
-cluster=(pi/2)*cluster;
+%cluster=(pi/2)*cluster;
 d= size(cluster,2); % size of cluster
 
 for a=1:ht
@@ -41,10 +49,10 @@ for a=1:ht
 
         for i=1:d-1
             if (I(a,b) >=cluster(i)) && (I(a,b)<=cluster (i+1))
-                %cluster (i)=(pi/2)*cluster(i);
-                %cluster (i+1)=(pi/2)*cluster(i+1);
+                cluster (i)=cluster(i);
+                cluster (i+1)=cluster(i+1);
 
-                alphas =double(B(a,b)/(cluster(i+1)-cluster(i))); % this is for a alpha calculation
+                alphas = double(B(a,b)/(cluster(i+1)-cluster(i))); % this is for a alpha calculation
                 break;
             else
             end
@@ -57,18 +65,27 @@ for a=1:ht
                 if(a+p<=0)||(a+p>=ht+1)||(b+c<=0)||(b+c>=wt+1)
                     sum=sum+0.00;
                 else
-                    w =(pi*2)*(pi/2 - (I(a+p,b+c) - I(a,b)));
+                    w =(pi/2 - (I(a+p,b+c) - I(a,b)));
                     %w =(A(a,b)- (I(a+p,b+c) + I(a,b)));
-                    z=(I(a+p,b+c))*cos(w-A(a,b));
+                    z=(I(a+p,b+c))*sin(w-A(a,b));
 
                     %y= 1/(alphas + exp(-(lamda)*(double(z)-B(a,b))));    % this a
                     %y= 1/(alphas + exp(-(lamda)*(double(z)-B(a,b))));
                     %fprintf("check %f\t %f \t %f\n", y,alphas, exp(-(lamda)*(double(z)-B(a,b))));
                     %sum=sum+y;
-                    tmp = exp(-(lamda)*(double(z)-B(a,b)));
-                    y= 1/(alphas + tmp);
-                    %fprintf("check %f\t %f \t %f\n", y,alphas, exp(-(lamda)*(double(z)-B(a,b))));
-                    
+                    if double(z)-B(a,b) == 0 || lamda == 0
+                       
+                        tmp = exp(-(lamda)*(double(z)-B(a,b)));
+                        %y = 1/(alphas + tmp);
+                        %fprintf("check y:%f\t a:%f\t z:%f\t B:%f\t exp:%f\n", y, alphas, double(z), B(a,b), exp(-(lamda)*(double(z)-B(a,b))));
+                        %tmp = 1.0;  
+                    else
+                        tmp = exp(-(lamda)*(double(z)-B(a,b)));
+                        
+                    end
+                    y= 1/(alphas + tmp ); % 20.0 here did the trick
+
+                                       
                     %check_range = -1/tmp * log(alphas-1);
                     
                     %if check_range >1.0

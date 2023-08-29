@@ -5,7 +5,9 @@ fid = fopen('results/LiverDice_lambda.txt','w');
 fprintf(fid,'%s\t%s\t%s\n','patientID','lambda', 'Dice');
 fclose(fid);
 
+
 topLevelFolder = '/rsrch1/ip/rglenn1/data/Processed';
+topLevelFolder = '/rsrch1/ip/rglenn1/data/liver_33_patients/Processed/'
 files = dir(topLevelFolder);
 % Get a logical vector that tells which is a directory.
 dirFlags = [files.isdir];
@@ -21,6 +23,9 @@ filename = sprintf('results/liver_dices.txt');
 fid = fopen(filename,'w'); 
 fprintf(fid,'paitentID\tDice\t\n');
 fclose(fid);
+% Parameters
+max_levels = 5;
+clusterlist = [0 0.14 0.28 0.42 0.56 0.70 0.90 1];
 
 for k = 1 :length(subFolderNames)
     patient = topLevelFolder+ "/"+subFolderNames{k};
@@ -29,6 +34,10 @@ for k = 1 :length(subFolderNames)
     fprintf('BitsPerPixel %d', info.BitsPerPixel);
     art = niftiread(info);
 
+    for n = 1 : length(art(1,1,:))
+        segimg = double(art(:,:,n));
+        fprintf('%f \t %f \t %f \t %f \n', std(segimg(:)), mean(segimg(:)), max(segimg(:)), min(segimg(:)));
+    end
     
     truth = niftiread(patient + '/Truth.raw.nii.gz');
     if (size(art,1) ~= size(truth,1)) || (size(art, 2) ~= size(truth, 2))
@@ -101,7 +110,13 @@ for k = 1 :length(subFolderNames)
         lamblist = [-1.0, -0.4, -0.2, 0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 0.9, ...
             1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0,...
             4.25, 4.5, 4.75, 5.0];
-        [segimg, lambBest, bestDice] = fuzzyimage((img), (imgtruth), n, outdir, subFolderNames{k}, lamblist );
+        lamblist = [-1.0];
+        %fuzzyimage((img), (img), ...
+        %        n, outdir, subFolderNames{k}, lamb, cluster, max_levels );
+
+        segimg = fuzzyimage((img), (imgtruth), n, outdir, subFolderNames{k}, lamblist, clusterlist, max_levels );
+        lambBest = 0.0;
+        bestDice = 1.0;
         %segimg = img;
        
         segnifit(:,:,n) = single(segimg);
